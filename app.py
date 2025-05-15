@@ -9,10 +9,17 @@ from feature_engineering.feature_pipeline import (
 from sklearn.preprocessing import LabelEncoder
 
 from model_training.training_pipeline import auto_mode, manual_mode, detect_task_type
+from evaluation.evaluation_pipeline import (
+    display_dataset_summary,
+    display_preprocessing_summary,
+    display_feature_importance,
+    evaluate_model,
+    generate_report_dict
+)
 
-st.title("🧠 AutoML Dashboard")
+st.title("🧠 AutoMLify Dashboard")
 
-page = st.sidebar.selectbox("📂 Select Section", ["Upload Dataset", "Preprocessing", "EDA","Feature Engineering","Model Training and Evaluation"])
+page = st.sidebar.selectbox("📂 Select Section", ["Upload Dataset", "Preprocessing", "EDA","Feature Engineering","Model Training and Evaluation","Evaluation"])
 
 if page == "Upload Dataset":
     st.header("📤 Upload Your Dataset")
@@ -59,18 +66,42 @@ elif page == "EDA":
     else:
         st.warning("Please run preprocessing first.")
 
+# elif page == "Feature Engineering":
+#     if "X_processed" in st.session_state and "y_processed" in st.session_state:
+#         X = st.session_state.X_processed.copy()
+#         y = st.session_state.y_processed
+
+#         X = construct_new_features(X)
+#         X = remove_low_variance_features(X)
+#         X = remove_highly_correlated_features(X)
+
+#         method = st.selectbox("🎯 Feature selection method", ["mutual_info", "f_classif"])
+#         k = st.slider("🔢 Number of top features to select", 5, min(20, X.shape[1]), 10)
+#         X = select_important_features(X, y, method, k)
+
+#         X_scaled = scale_features(X)
+
+#         st.session_state.X_final = X_scaled
+#         st.session_state.y_final = y
+
+#         st.success("✅ Feature engineering complete. Ready for model training!")
+#     else:
+#         st.warning("Please complete preprocessing first.")
 elif page == "Feature Engineering":
     if "X_processed" in st.session_state and "y_processed" in st.session_state:
         X = st.session_state.X_processed.copy()
         y = st.session_state.y_processed
 
-        X = construct_new_features(X)
+        # Removed complex feature generation to avoid errors and simplify logic
         X = remove_low_variance_features(X)
         X = remove_highly_correlated_features(X)
 
-        method = st.selectbox("🎯 Feature selection method", ["mutual_info", "f_classif"])
-        k = st.slider("🔢 Number of top features to select", 5, min(20, X.shape[1]), 10)
-        X = select_important_features(X, y, method, k)
+        if X.shape[0] > 0:
+            method = st.selectbox("🎯 Feature selection method", ["f_classif"])
+            k = st.slider("🔢 Number of top features to select", 1, min(20, X.shape[1]), 5)
+            X = select_important_features(X, y, method, k)
+        else:
+            st.warning("No data samples available for feature selection. Please check your preprocessing.")
 
         X_scaled = scale_features(X)
 
@@ -95,3 +126,29 @@ elif page == "Model Training and Evaluation":
             manual_mode(X, y, task_type)
     else:
         st.warning("Please complete feature engineering before training.")
+elif page == "Evaluation":
+    if all(k in st.session_state for k in ["model", "X_test", "y_test", "task_type"]):
+        model = st.session_state.model
+        X_test = st.session_state.X_test
+        y_test = st.session_state.y_test
+        task_type = st.session_state.task_type
+
+        report = generate_report_dict(model, X_test, y_test, task_type)
+
+        st.subheader("📊 Evaluation Report")
+        for section, content in report.items():
+            st.markdown(f"### {section}")
+            st.write(content)
+
+        if st.button("📥 Download Report as CSV"):
+            report_df = pd.DataFrame(list(report.items()), columns=["Section", "Details"])
+            csv = report_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download CSV",
+                data=csv,
+                file_name='evaluation_report.csv',
+                mime='text/csv'
+            )
+    else:
+        st.warning("Please train a model first before accessing evaluation.")
+          
