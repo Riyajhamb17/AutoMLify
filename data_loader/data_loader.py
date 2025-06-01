@@ -18,8 +18,9 @@ def load_dataset(uploaded_file):
             st.error("Unsupported file format. Please upload CSV, Excel, or JSON.")
             return None
         if 'name' in df.columns:
-            st.session_state.row_ids = df['name']
-            df.drop(columns=['name'], inplace=True)
+            st.info("🧾 'name' column detected and removed to avoid ID leak.")
+            df = df.drop(columns=['name'])
+            
         if 'id' in df.columns:
             st.session_state.row_ids = df['id']
             df.drop(columns=['id'], inplace=True)    

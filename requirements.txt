@@ -6,3 +6,5 @@ matplotlib
 seaborn
 ydata-profiling
 scipy
+python-docx 
+reportlab

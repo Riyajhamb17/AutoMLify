@@ -41,6 +41,10 @@ def auto_mode(X, y, task_type):
             scores = cross_val_score(model, X_train, y_train, cv=5, error_score='raise')
             avg_score = scores.mean()
             model.fit(X_train, y_train)
+            st.session_state['trained_model'] = model
+            st.session_state['X_test'] = X_test
+            st.session_state['y_test'] = y_test
+            st.session_state['task_type'] = task_type
             params = model.get_params()
             results.append((name, avg_score, params))
         except Exception as e:
@@ -103,6 +107,11 @@ def manual_mode(X, y, task_type):
     try:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         model.fit(X_train, y_train)
+       
+        st.session_state['trained_model'] = model
+        st.session_state['X_test'] = X_test
+        st.session_state['y_test'] = y_test
+        st.session_state['task_type'] = task_type       
         preds = model.predict(X_test)
 
         # Metrics

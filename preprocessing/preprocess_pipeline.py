@@ -46,40 +46,64 @@ def handle_missing_values(df, threshold_ratio=0.01):
     return df
 
 
+from imblearn.over_sampling import SMOTE, RandomOverSampler
+import pandas as pd
+import streamlit as st
+import numpy as np
+
 def balance_dataset(X, y):
     st.subheader("⚖️ Class Balance Analysis")
 
-    class_counts = y.value_counts()
+    # Show original distribution
+    y_series=pd.Series(y)
+    class_counts = y_series.value_counts()
     st.write("Original Class Distribution:")
     st.bar_chart(class_counts)
 
+    # Imbalance ratio
     majority_class = class_counts.idxmax()
     minority_class = class_counts.idxmin()
     imbalance_ratio = class_counts[majority_class] / class_counts[minority_class]
 
     st.info(f"Imbalance Ratio: {imbalance_ratio:.2f}")
 
+    # If already balanced, return
     if imbalance_ratio < 1.5:
         st.success("✅ Dataset is already balanced. No action needed.")
         return X, y
 
     try:
-        if len(y.value_counts()) == 2:
-            st.info("Using SMOTE (for binary classification)...")
-            smote = SMOTE()
-            X_res, y_res = smote.fit_resample(X, y)
+        # Use only numeric columns for oversampling
+        X_numeric = X.select_dtypes(include=[np.number])
+
+        if X_numeric.shape[1] == 0:
+            st.warning("⚠️ No numeric features available for resampling.")
+            return X, y
+
+        if len(class_counts) == 2:
+            st.info("🔄 Using SMOTE for binary classification...")
+            sampler = SMOTE(random_state=42)
         else:
-            st.info("Using RandomOverSampler (multi-class)...")
-            ros = RandomOverSampler()
-            X_res, y_res = ros.fit_resample(X, y)
+            st.info("🔁 Using RandomOverSampler for multi-class classification...")
+            sampler = RandomOverSampler(random_state=42)
+
+        X_resampled, y_resampled = sampler.fit_resample(X_numeric, y)
+
+        # Replace numeric columns with resampled ones, keep other columns unchanged
+        X_others = X.drop(columns=X_numeric.columns)
+        X_res_combined = pd.concat([pd.DataFrame(X_resampled, columns=X_numeric.columns).reset_index(drop=True),
+                                    X_others.iloc[:X_resampled.shape[0]].reset_index(drop=True)], axis=1)
 
         st.success("✅ Dataset successfully balanced.")
         st.write("Balanced Class Distribution:")
-        st.bar_chart(pd.Series(y_res).value_counts())
-        return X_res, y_res
+        st.bar_chart(pd.Series(y_resampled).value_counts())
+
+        return X_res_combined, y_resampled
+
     except Exception as e:
         st.error(f"⚠️ Error during balancing: {e}")
         return X, y
+
     
 def encode_and_scale_features(X):
     """

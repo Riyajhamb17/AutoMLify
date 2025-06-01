@@ -8,10 +8,28 @@ from datetime import datetime
 
 def display_dataset_summary(X, y):
     st.subheader("📄 Dataset Summary")
-    st.write(f"Number of rows: {X.shape[0]}")
-    st.write(f"Number of features: {X.shape[1]}")
-    st.write("Target column distribution:")
-    st.bar_chart(y.value_counts() if y.dtype == 'object' or y.nunique() < 20 else y.describe())
+
+    # Drop "name" or ID-like columns just for display
+    X_display = X.copy()
+    name_like_cols = [col for col in X_display.columns if "name" in col.lower() or "id" in col.lower()]
+    if name_like_cols:
+        X_display.drop(columns=name_like_cols, inplace=True)
+        st.info(f"🔍 Removed {name_like_cols} column(s) from display as they are likely identifiers.")
+
+    # Shape Info
+    st.write(f"📊 Number of rows: {X_display.shape[0]}")
+    st.write(f"🧬 Number of features: {X_display.shape[1]}")
+
+    # Target Distribution
+    if y is not None and len(y) > 0:
+        st.write("🎯 Target column distribution:")
+        if y.dtype == 'object' or y.nunique() < 20:
+            st.bar_chart(y.value_counts())
+        else:
+            st.write(y.describe())
+    else:
+        st.warning("⚠️ No target column data available.")
+
 
 
 def display_preprocessing_summary():
@@ -52,6 +70,15 @@ def evaluate_model(model, X_test, y_test, task_type):
         st.write(f"✅ RMSE: {rmse:.4f}")
         st.write(f"✅ MAE: {mae:.4f}")
         st.write(f"✅ R² Score: {r2:.4f}")
+        
+model = st.session_state.get('trained_model', None)
+X_test = st.session_state.get('X_test', None)
+y_test = st.session_state.get('y_test', None)
+task_type = st.session_state.get('task_type', None)
+if model is None or X_test is None or y_test is None:
+    st.warning("⚠️ Please train a model first before accessing evaluation.")
+else:
+    evaluate_model(model, X_test, y_test, task_type)        
 
 
 def generate_report_dict(model_name, model_params, metrics_dict, task_type):
