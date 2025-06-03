@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import seaborn as sns
 import matplotlib.pyplot as plt
-from ydata_profiling import ProfileReport
+# from ydata_profiling import ProfileReport
 from streamlit.components.v1 import html
 
 def run_eda(df):
@@ -40,8 +40,8 @@ def run_eda(df):
     st.write(f"🔢 Numerical Columns: {numeric}")
 
     # Optional: Display ProfileReport
-    st.subheader("🧠 Auto EDA Report with Narration")
-    if st.button("Generate Pandas Profiling Report"):
-        profile = ProfileReport(df, title="Pandas Profiling Report", explorative=True)
-        profile_html = profile.to_html()
-        html(profile_html, height=800, scrolling=True)
+    # st.subheader("🧠 Auto EDA Report with Narration")
+    # if st.button("Generate Pandas Profiling Report"):
+    #     profile = ProfileReport(df, title="Pandas Profiling Report", explorative=True)
+    #     profile_html = profile.to_html()
+    #     html(profile_html, height=800, scrolling=True)
