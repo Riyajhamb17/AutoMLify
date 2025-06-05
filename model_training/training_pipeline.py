@@ -7,12 +7,25 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.svm import SVC, SVR
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
+import pandas as pd
 
-
+# def detect_task_type(y):
+#     if y.dtype == 'object' or y.nunique() <= 15:
+#         return "classification"
+#     return "regression"
 def detect_task_type(y):
-    if y.dtype == 'object' or y.nunique() <= 15:
-        return "classification"
-    return "regression"
+    if not isinstance(y, pd.Series):
+        y = pd.Series(y)
+
+    try:
+        if y.dtype == 'object' or y.nunique() <= 15:
+            return "classification"
+        else:
+            return "regression"
+    except Exception as e:
+        st.error(f"Error detecting task type: {e}")
+        return "classification"  # default fallback
+
 
 def auto_mode(X, y, task_type):
     st.subheader("🚀 Auto Mode: Training Multiple Models")
@@ -20,14 +33,14 @@ def auto_mode(X, y, task_type):
     models = {
         "classification": {
             "Logistic Regression": LogisticRegression(max_iter=500),
-            "Random Forest": RandomForestClassifier(),
+            "Random Forest": RandomForestClassifier(random_state=42),
             "SVM": SVC(),
             "Naive Bayes": GaussianNB(),
             "KNN": KNeighborsClassifier()
         },
         "regression": {
             "Linear Regression": LinearRegression(),
-            "Random Forest": RandomForestRegressor(),
+            "Random Forest": RandomForestRegressor(random_state=42),
             "Decision Tree": DecisionTreeRegressor(),
             "SVR": SVR()
         }
